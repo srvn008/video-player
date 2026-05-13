@@ -51,10 +51,6 @@ public class frameVideoPlayer extends javax.swing.JFrame {
      */
     public frameVideoPlayer() {
 
-        System.setProperty(
-                "jna.library.path",
-                "C:\\Program Files\\VideoLAN\\VLC"
-        );
         initComponents();
 
         configurarPanelVideo();
@@ -64,11 +60,22 @@ public class frameVideoPlayer extends javax.swing.JFrame {
         configurarEventos();
 
         String userHome = System.getProperty("user.home");
-        File videoFolder = new File(userHome, "Videos"); // En inglés (Windows)
+
+        File videoFolder = new File(userHome, "Videos");
+
         if (!videoFolder.exists()) {
-            videoFolder = new File(userHome, "Video"); // En español
+
+            videoFolder = new File(userHome, "Movies"); // Mac
+
         }
-        System.out.print(videoFolder.getPath());
+
+        if (!videoFolder.exists()) {
+
+            videoFolder = new File(userHome, "Video"); // alternativa
+
+        }
+
+        System.out.println(videoFolder.getPath());
 
         loadPlayList(videoFolder.getAbsolutePath());
 
@@ -95,7 +102,8 @@ public class frameVideoPlayer extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-        jPanelVideo.setBackground(new java.awt.Color(0, 0, 0));
+        jPanelVideo.setBackground(new java.awt.Color(255, 255, 255));
+        jPanelVideo.setForeground(new java.awt.Color(255, 255, 255));
         jPanelVideo.setPreferredSize(new java.awt.Dimension(800, 450));
 
         javax.swing.GroupLayout jPanelVideoLayout = new javax.swing.GroupLayout(jPanelVideo);
@@ -221,6 +229,40 @@ public class frameVideoPlayer extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_botonSaltoActionPerformed
 
+    private static void configurarRutaVlc() {
+
+        String os = System.getProperty("os.name").toLowerCase();
+        String vlcPath = null;
+
+        if (os.contains("win")) {
+
+            File vlc64 = new File("C:\\Program Files\\VideoLAN\\VLC");
+            File vlc32 = new File("C:\\Program Files (x86)\\VideoLAN\\VLC");
+
+            if (vlc64.exists()) {
+                vlcPath = vlc64.getAbsolutePath();
+            } else if (vlc32.exists()) {
+                vlcPath = vlc32.getAbsolutePath();
+            }
+
+        } else if (os.contains("mac")) {
+
+            File macVlc = new File("/Applications/VLC.app/Contents/MacOS/lib");
+
+            if (macVlc.exists()) {
+                vlcPath = macVlc.getAbsolutePath();
+            }
+
+        }
+
+        if (vlcPath != null) {
+            System.setProperty("jna.library.path", vlcPath);
+            System.out.println("VLC path configurado: " + vlcPath);
+        } else {
+            System.err.println("No se encontró VLC instalado.");
+        }
+    }
+
     public void reproducirArchivo(File archivo) {
 
         if (archivo == null || !archivo.exists()) {
@@ -325,7 +367,7 @@ public class frameVideoPlayer extends javax.swing.JFrame {
             ImageIcon miniatura
                     = new ImageIcon(
                             getClass().getResource(
-                                    "/assets/ajustes.png"
+                                    "/assets/portada_1.png"
                             )
                     );
 
@@ -344,15 +386,13 @@ public class frameVideoPlayer extends javax.swing.JFrame {
 
     private void configurarPanelVideo() {
 
+        jPanelVideo.removeAll();
+
         jPanelVideo.setLayout(new BorderLayout());
 
-        mediaPlayerComponent
-                = new EmbeddedMediaPlayerComponent();
+        mediaPlayerComponent = new EmbeddedMediaPlayerComponent();
 
-        jPanelVideo.add(
-                mediaPlayerComponent,
-                BorderLayout.CENTER
-        );
+        jPanelVideo.add(mediaPlayerComponent, BorderLayout.CENTER);
 
         jPanelVideo.revalidate();
 
@@ -442,8 +482,20 @@ public class frameVideoPlayer extends javax.swing.JFrame {
         }
         //</editor-fold>
 
+        configurarRutaVlc();
+
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(() -> new frameVideoPlayer().setVisible(true));
+        java.awt.EventQueue.invokeLater(() -> {
+
+            frameVideoPlayer frame = new frameVideoPlayer();
+
+            frame.setSize(1100, 650);
+
+            frame.setLocationRelativeTo(null);
+
+            frame.setVisible(true);
+
+        });
 
     }
 
