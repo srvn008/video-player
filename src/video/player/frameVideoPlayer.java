@@ -7,8 +7,6 @@ package video.player;
 import uk.co.caprica.vlcj.player.component.EmbeddedMediaPlayerComponent;
 
 import java.awt.BorderLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
@@ -17,15 +15,13 @@ import java.io.File;
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 
-import javax.swing.JButton;
-import javax.swing.JFrame;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+
+import javax.swing.JFileChooser;
 import javax.swing.SwingUtilities;
-import uk.co.caprica.vlcj.media.callback.CallbackMedia;
-import uk.co.caprica.vlcj.media.callback.nonseekable.FileInputStreamMedia;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import uk.co.caprica.vlcj.player.base.MediaPlayer;
 import uk.co.caprica.vlcj.player.base.MediaPlayerEventAdapter;
 
@@ -45,6 +41,8 @@ public class frameVideoPlayer extends javax.swing.JFrame {
 
     private final DefaultListModel<VideoItem> modelo = new DefaultListModel<>();
     private JList<VideoItem> listaVideos;
+
+    private boolean loopActivo = false;
 
     /**
      * Creates new form frameVideoPlayer
@@ -102,7 +100,7 @@ public class frameVideoPlayer extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-        jPanelVideo.setBackground(new java.awt.Color(255, 255, 255));
+        jPanelVideo.setBackground(new java.awt.Color(0, 0, 0));
         jPanelVideo.setForeground(new java.awt.Color(255, 255, 255));
         jPanelVideo.setPreferredSize(new java.awt.Dimension(800, 450));
 
@@ -129,6 +127,7 @@ public class frameVideoPlayer extends javax.swing.JFrame {
         );
 
         botonRebobinar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/assets/boton-de-rebobinado (1).png"))); // NOI18N
+        botonRebobinar.addActionListener(this::botonRebobinarActionPerformed);
 
         botonPlay.setIcon(new javax.swing.ImageIcon(getClass().getResource("/assets/boton-play.png"))); // NOI18N
         botonPlay.addActionListener(this::botonPlayActionPerformed);
@@ -210,24 +209,152 @@ public class frameVideoPlayer extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void botonPlayActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonPlayActionPerformed
-        // TODO add your handling code here:
+        reproducirSeleccionado();
     }//GEN-LAST:event_botonPlayActionPerformed
 
     private void botonUploadActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonUploadActionPerformed
-        // TODO add your handling code here:
+
+        JFileChooser fileChooser = new JFileChooser();
+
+        fileChooser.setDialogTitle("Seleccionar video");
+
+        fileChooser.setFileFilter(
+                new FileNameExtensionFilter(
+                        "Videos",
+                        "mp4", "mkv", "avi", "mov"
+                )
+        );
+
+        int resultado = fileChooser.showOpenDialog(this);
+
+        if (resultado != JFileChooser.APPROVE_OPTION) {
+
+            return;
+
+        }
+
+        File archivo = fileChooser.getSelectedFile();
+
+        if (archivo == null || !archivo.exists()) {
+
+            JOptionPane.showMessageDialog(this, "Archivo no válido.");
+
+            return;
+
+        }
+
+       ImageIcon miniatura = obtenerPortadaAleatoria();
+
+        modelo.addElement(
+                new VideoItem(
+                        archivo,
+                        miniatura
+                )
+        );
+
+        playList = new File[modelo.size()];
+
+        for (int i = 0; i < modelo.size(); i++) {
+
+            playList[i] = modelo.get(i).getArchivo();
+
+        }
+
+        playPosition = modelo.size() - 1;
+
+        listaVideos.setSelectedIndex(playPosition);
+
+        listaVideos.ensureIndexIsVisible(playPosition);
+
+        reproducirArchivo(archivo);
     }//GEN-LAST:event_botonUploadActionPerformed
 
     private void botonLoopActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonLoopActionPerformed
-        // TODO add your handling code here:
+        loopActivo = !loopActivo;
+
+        if (loopActivo) {
+
+            JOptionPane.showMessageDialog(this, "Loop activado.");
+
+        } else {
+
+            JOptionPane.showMessageDialog(this, "Loop desactivado.");
+
+        }
     }//GEN-LAST:event_botonLoopActionPerformed
 
     private void botonStopActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonStopActionPerformed
-        // TODO add your handling code here:
+
+        mediaPlayerComponent
+                .mediaPlayer()
+                .controls()
+                .stop();
     }//GEN-LAST:event_botonStopActionPerformed
 
     private void botonSaltoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonSaltoActionPerformed
-        // TODO add your handling code here:
+        if (playList == null || playList.length == 0) {
+
+            JOptionPane.showMessageDialog(this, "No hay videos en la lista.");
+
+            return;
+
+        }
+
+        if (playPosition == null) {
+
+            playPosition = 0;
+
+        } else {
+
+            playPosition++;
+
+        }
+
+        if (playPosition >= playList.length) {
+
+            playPosition = 0;
+
+        }
+
+        listaVideos.setSelectedIndex(playPosition);
+
+        listaVideos.ensureIndexIsVisible(playPosition);
+
+        reproducirArchivo(playList[playPosition]);
     }//GEN-LAST:event_botonSaltoActionPerformed
+
+    private void botonRebobinarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonRebobinarActionPerformed
+
+        if (playList == null || playList.length == 0) {
+
+            JOptionPane.showMessageDialog(this, "No hay videos en la lista.");
+
+            return;
+
+        }
+
+        if (playPosition == null) {
+
+            playPosition = 0;
+
+        } else {
+
+            playPosition--;
+
+        }
+
+        if (playPosition < 0) {
+
+            playPosition = playList.length - 1;
+
+        }
+
+        listaVideos.setSelectedIndex(playPosition);
+
+        listaVideos.ensureIndexIsVisible(playPosition);
+
+        reproducirArchivo(playList[playPosition]);
+    }//GEN-LAST:event_botonRebobinarActionPerformed
 
     private static void configurarRutaVlc() {
 
@@ -364,12 +491,7 @@ public class frameVideoPlayer extends javax.swing.JFrame {
 
             listaVideos.add(archivo);
 
-            ImageIcon miniatura
-                    = new ImageIcon(
-                            getClass().getResource(
-                                    "/assets/portada_1.png"
-                            )
-                    );
+            ImageIcon miniatura = obtenerPortadaAleatoria();
 
             modelo.addElement(
                     new VideoItem(
@@ -433,12 +555,15 @@ public class frameVideoPlayer extends javax.swing.JFrame {
                     return;
                 }
 
-                VideoItem item
-                        = listaVideos.getSelectedValue();
+                VideoItem item = listaVideos.getSelectedValue();
 
                 if (item == null) {
+
                     return;
+
                 }
+
+                playPosition = listaVideos.getSelectedIndex();
 
                 reproducirArchivo(
                         item.getArchivo()
@@ -458,9 +583,86 @@ public class frameVideoPlayer extends javax.swing.JFrame {
             }
 
         });
+        
+        
+        mediaPlayerComponent
+
+        .mediaPlayer()
+
+        .events()
+
+        .addMediaPlayerEventListener(
+
+                new MediaPlayerEventAdapter() {
+
+            @Override
+
+            public void finished(MediaPlayer mediaPlayer) {
+
+                SwingUtilities.invokeLater(() -> {
+
+                    if (loopActivo) {
+
+                        reproducirSeleccionado();
+
+                    } else {
+
+                        botonSaltoActionPerformed(null);
+
+                    }
+
+                });
+
+            }
+
+        });
 
     }
 
+    private void reproducirSeleccionado() {
+
+        VideoItem item = listaVideos.getSelectedValue();
+
+        if (item == null) {
+
+            if (modelo.isEmpty()) {
+
+                JOptionPane.showMessageDialog(this, "No hay videos en la lista.");
+
+                return;
+
+            }
+
+            listaVideos.setSelectedIndex(0);
+
+            item = listaVideos.getSelectedValue();
+
+        }
+
+        playPosition = listaVideos.getSelectedIndex();
+
+        reproducirArchivo(item.getArchivo());
+
+    }
+
+    
+    private ImageIcon obtenerPortadaAleatoria() {
+
+    int numero = 1 + (int) (Math.random() * 5);
+
+    String ruta = "/assets/portada_" + numero + ".png";
+
+    return new ImageIcon(
+
+            getClass().getResource(ruta)
+
+    );
+
+}
+    
+    
+    
+    
     /**
      * @param args the command line arguments
      */
