@@ -243,7 +243,7 @@ public class frameVideoPlayer extends javax.swing.JFrame {
 
         }
 
-       ImageIcon miniatura = obtenerPortadaAleatoria();
+        ImageIcon miniatura = obtenerPortadaAleatoria();
 
         modelo.addElement(
                 new VideoItem(
@@ -525,10 +525,9 @@ public class frameVideoPlayer extends javax.swing.JFrame {
     private void configurarLista() {
 
         listaVideos = new JList<>(modelo);
+        listaVideos.setFixedCellHeight(100);
 
-        listaVideos.setFixedCellHeight(80);
-
-        listaVideos.setFixedCellWidth(200);
+        listaVideos.setFixedCellWidth(250);
 
         listaVideos.setCellRenderer(
                 new VideoRenderer()
@@ -583,39 +582,34 @@ public class frameVideoPlayer extends javax.swing.JFrame {
             }
 
         });
-        
-        
+
         mediaPlayerComponent
+                .mediaPlayer()
+                .events()
+                .addMediaPlayerEventListener(
+                        new MediaPlayerEventAdapter() {
 
-        .mediaPlayer()
+                    @Override
 
-        .events()
+                    public void finished(MediaPlayer mediaPlayer) {
 
-        .addMediaPlayerEventListener(
+                        SwingUtilities.invokeLater(() -> {
 
-                new MediaPlayerEventAdapter() {
+                            if (loopActivo) {
 
-            @Override
+                                reproducirSeleccionado();
 
-            public void finished(MediaPlayer mediaPlayer) {
+                            } else {
 
-                SwingUtilities.invokeLater(() -> {
+                                botonSaltoActionPerformed(null);
 
-                    if (loopActivo) {
+                            }
 
-                        reproducirSeleccionado();
-
-                    } else {
-
-                        botonSaltoActionPerformed(null);
+                        });
 
                     }
 
                 });
-
-            }
-
-        });
 
     }
 
@@ -645,24 +639,18 @@ public class frameVideoPlayer extends javax.swing.JFrame {
 
     }
 
-    
     private ImageIcon obtenerPortadaAleatoria() {
 
-    int numero = 1 + (int) (Math.random() * 5);
+        int numero = 1 + (int) (Math.random() * 5);
 
-    String ruta = "/assets/portada_" + numero + ".png";
+        String ruta = "/assets/portada_" + numero + ".png";
 
-    return new ImageIcon(
+        return new ImageIcon(
+                getClass().getResource(ruta)
+        );
 
-            getClass().getResource(ruta)
+    }
 
-    );
-
-}
-    
-    
-    
-    
     /**
      * @param args the command line arguments
      */
